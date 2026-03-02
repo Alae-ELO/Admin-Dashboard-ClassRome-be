@@ -1,53 +1,28 @@
-import { eq } from "drizzle-orm";
-import { index, pool } from "./db";
-import { demoUsers } from "./db/schema";
+import express from "express";
+import cors from "cors" ;
+import AllsubjectRouter from "./routes/subjects"
 
-async function main() {
-  try {
-    console.log("Performing CRUD operations...");
+const PORT = 3011;
+const app = express();
 
-    const [newUser] = await index
-      .insert(demoUsers)
-      .values({ name: "Admin User", email: "admin@example.com" })
-      .returning();
 
-    if (!newUser) {
-      throw new Error("Failed to create user");
-    }
-
-    console.log("CREATE: New user created:", newUser);
-
-    const foundUser = await index
-      .select()
-      .from(demoUsers)
-      .where(eq(demoUsers.id, newUser.id));
-    console.log("READ: Found user:", foundUser[0]);
-
-    const [updatedUser] = await index
-      .update(demoUsers)
-      .set({ name: "Super Admin" })
-      .where(eq(demoUsers.id, newUser.id))
-      .returning();
-
-    if (!updatedUser) {
-      throw new Error("Failed to update user");
-    }
-
-    console.log("UPDATE: User updated:", updatedUser);
-
-    await index.delete(demoUsers).where(eq(demoUsers.id, newUser.id));
-    console.log("DELETE: User deleted.");
-
-    console.log("CRUD operations completed successfully.");
-  } catch (error) {
-    console.error("Error performing CRUD operations:", error);
-    process.exit(1);
-  } finally {
-    if (pool) {
-      await pool.end();
-      console.log("Database pool closed.");
-    }
-  }
+if(!process.env. FRONTEND_URL) {
+  throw new Error('FRONTEND_URL is not set in .env file');
 }
 
-main();
+app.use(cors({
+    origin: process.env.FRONTEND_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+  }));
+
+
+
+app.get("/", (_req, res) => {
+  res.send("hello");
+});
+
+app.use('/subjects', AllsubjectRouter);
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
